@@ -1,13 +1,8 @@
 import customtkinter
-
-import matplotlib.figure
-import matplotlib.figure
 # - Py to exe requirements
-import os 
-import sys
 import json
 import re
-import random
+
 
 key = "" #https://aistudio.google.com/apikey
 
@@ -19,26 +14,65 @@ customtkinter.set_appearance_mode("system") #Imposta l'aspetto usando il tema di
 # - Function Called
 
 def resource_path(relative_path):
+    import os
     try:
+        import sys
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+with open(resource_path("attivita.json"), 'r') as r: 
+    data_attivita = json.load(r)
+
+def guidaModal():
+    modalGuide = customtkinter.CTkToplevel(app)
+    
+    modalGuide.geometry("750x400")
+    modalGuide.minsize(750,400)
+    modalGuide.title("Guida all'uso dell'app")
+    modalGuide.after(20, modalGuide.lift) # - Expand App
+
+    modalGuide.grid_columnconfigure(1, weight=1)
+    modalGuide.grid_rowconfigure(1, weight=1)
+
+    frameGuide = customtkinter.CTkFrame(master=modalGuide)
+    frameGuide.grid(row=0, column=1, padx=30, pady=(40, 20))
+
+    frameGuide.grid_columnconfigure(1, weight=1)
+    frameGuide.grid_rowconfigure(1, weight=1)
+    
+    guide_text = """
+    1. Selezione del Sesso 🧬
+        Scegli tra "Maschio" o "Femmina" nel menu a tendina.  
+    2. Dati personali 🆔
+        Inserisci peso (kg), altezza (cm) ed età (anni).  
+    3. Attività fisica 🏃
+        Inserisci le kcal bruciate giornalmente o consulta la guida per una stima.  
+    4. Calcolo delle kcal 🔥 
+        - Seleziona un’attività fisica dal menu.  
+        - Inserisci la durata in minuti.  
+        - Premi "Invia" per una sola attività o "Somma" per aggiungerne altre.  
+        - Usa "Reset" per azzerare i valori.  
+    5. Calcolo del regime alimentare 🥗
+        Premi "Calcola" nel menu principale, poi "Dieta AI" per generare una dieta personalizzata
+        (Premere più volte per avere più menu giornalieri diversi).    
+    """
+
+    LabelGuide = customtkinter.CTkLabel(frameGuide, text=guide_text, font=("Roboto", 14), justify="left")
+    LabelGuide.grid(column=1, row=0, padx=20, pady=20)
 
 
 def tabellaKcal():
-    with open(resource_path("attivita.json"), 'r') as r: 
-        data_attivita = json.load(r)
     # - start function
     def var_attivita(option):
         try:
             global KcalText
             if option == "Invia":
-                value = float(tabellaKcalTime.get()) * data_attivita[str(tabellaKcalOption.get())]
+                value = float(tabellaKcalTime.get()) * data_attivita[tabellaKcalOption.get()]
             elif option == "Somma":
                 exvalue = re.search(r'\d+\.\d+|\d+', KcalText.cget("text")).group()
-                value = (float(tabellaKcalTime.get()) * data_attivita[str(tabellaKcalOption.get())]) + float(exvalue)
+                value = (float(tabellaKcalTime.get()) * data_attivita[tabellaKcalOption.get()]) + float(exvalue)
             elif option == "Reset":
                 value = "0.0"
             tabellaTextKcal.configure(text=f"{value} kcal")
@@ -52,7 +86,7 @@ def tabellaKcal():
     
     modalTab.geometry("300x300")
     modalTab.minsize(300,300)
-    modalTab.title("Tabella kcal")
+    modalTab.title("Calcolo attività (kcal/min)")
     modalTab.after(20, modalTab.lift) # - Expand App
 
     modalTab.grid_columnconfigure(1, weight=1)
@@ -66,9 +100,7 @@ def tabellaKcal():
     frame.grid_columnconfigure(1, weight=1)
     frame.grid_rowconfigure(1, weight=1)
     # - Frame Ui
-    list_values = []
-    for data in data_attivita:
-        list_values.append(data)
+    list_values = list(data_attivita.keys())
 
     tabellaKcalOption = customtkinter.CTkOptionMenu(frame, values=list_values,font=("Arial", 12))
     tabellaKcalOption.grid(column=1, row=1, padx=30, pady=20)
@@ -116,9 +148,10 @@ def ms_calc():
 def resultModal(mb, error = False):
     def generate_diet():
         try:
+            import google.generativeai as genai
+            import random
             # - AI
             ai_input = f"{mb} kcal"
-            import google.generativeai as genai
             random_food = random.choice(["carni bianche", "legumi", "verdure", "alimenti a basso consumo di zuccheri", "pesce", "crostacei", "carboidrati", "alimenti con colesterolo buono"])
             genai.configure(api_key=key)
             generation_config = {
@@ -147,13 +180,15 @@ def resultModal(mb, error = False):
             modalai.title("Dieta AI")
 
             frameai = customtkinter.CTkScrollableFrame(modalai, width=200, height=200,orientation="horizontal")
-            frameai.grid(row=1, column=0, padx=40, pady=40, sticky="nsew")
+            frameai.grid(row=1, column=0, padx=40, pady=(40,5), sticky="nsew")
             frameai.grid_rowconfigure(1, weight=1)
             frameai.grid_columnconfigure(0, weight=1)
-            labelai = customtkinter.CTkLabel(frameai, text=response, justify="left")
+            labelai = customtkinter.CTkLabel(frameai, text="  Dieta generata:\n\n" + response, justify="left")
             labelai.grid(row=1, column=0, padx=0, pady=0)
+
+            labelcredits = customtkinter.CTkLabel(modalai, text="Powered by AI.", justify="center")
+            labelcredits.grid(row=2, column=0, padx=0, pady=10)
         except Exception as e:
-            print(e)
             modalaierror = customtkinter.CTkToplevel(app)
             modalaierror.geometry("300x100")
             modalaierror.minsize(300,100)
@@ -161,7 +196,7 @@ def resultModal(mb, error = False):
 
             modalaierror.grid_columnconfigure(0, weight=1)
             modalaierror.grid_rowconfigure(1, weight=1)
-            modalaierror.title("Dieta AI")
+            modalaierror.title("Dieta AI (No WiFi)")
 
             labelerror = customtkinter.CTkLabel(modalaierror, text="Impossibile generare la dieta controlla il wifi", text_color="red")
             labelerror.grid(row=1, column=0, padx=0, pady=0)
@@ -174,7 +209,7 @@ def resultModal(mb, error = False):
     modal.grid_columnconfigure(0, weight=1)
     modal.grid_rowconfigure(1, weight=1)
 
-    modal.title("Risultati Metabolismo Basale")
+    modal.title("Risultati")
     if error == False:
         modal.geometry("600x600")
         modal.minsize(600,600)
@@ -184,17 +219,16 @@ def resultModal(mb, error = False):
         # - START Grafico (NON TOCCARE)
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from matplotlib.figure import Figure
-
-        labels = [f'Colazione - {round((mb/100)*25, 2)} kcal', f'Pranzo - {round((mb/100)*40, 2)} kcal', f'Cena - {round((mb/100)*30, 2)} kcal', f'Spuntini - {round((mb/100)*5, 2)} kcal']
+        labels = [f'Colazione - {round((mb/100)*25, 2)} kcal',
+                  f'Pranzo - {round((mb/100)*40, 2)} kcal',
+                  f'Cena - {round((mb/100)*30, 2)} kcal',
+                  f'Spuntini - {round((mb/100)*5, 2)} kcal']
         sizes = [25, 40, 30, 5]
 
         fig = Figure(figsize=(6,6))
         ax = fig.add_subplot()
-
         wedges, _, _ = ax.pie(sizes, radius=1, autopct='%1.1f%%', shadow=False)
-
         ax.legend(wedges, labels, title="Valori", loc="upper left",fontsize=10,title_fontsize=12)
-
         fig.patch.set_alpha(0)
         ax.set_facecolor("none")
 
@@ -226,7 +260,8 @@ def change_theme(value):
 # - Setup Ui
 
 app = customtkinter.CTk()
-app.title("Calcolo Metabolismo Basale")
+app.title("Vital App")
+app.iconbitmap(resource_path("logo.ico"))
 app.geometry("850x550")
 app.minsize(850,550)
 
@@ -276,13 +311,16 @@ InputEta = customtkinter.CTkTextbox(frame, height=20)
 InputEta.grid(row=5, column=2, padx=20, pady=10)
 # --
 
+ButtonGuide = customtkinter.CTkButton(frame, text="Guida", command=guidaModal, width=130,height=43, fg_color="#f7b801", hover_color="#DEA500", text_color="white", font=("Roboto", 14.5))
+ButtonGuide.grid(row=7, column=0, padx=20, pady=10)
+
 TextAttivita = customtkinter.CTkLabel(frame, text="Attività fisica giornaliera (kcal)", font=("Roboto", 20))
 TextAttivita.grid(row=6, column=1, padx=20, pady=(20, 0))
 
 KcalText = customtkinter.CTkLabel(frame, text="0.0 kcal", font=("Roboto", 18))
 KcalText.grid(row=7, column=1, padx=20, pady=10)
 
-ButtonTab = customtkinter.CTkButton(frame, text="Calcola kcal", command=tabellaKcal,height=35)
+ButtonTab = customtkinter.CTkButton(frame, text="Calcola kcal", command=tabellaKcal, width=130,height=43, fg_color="#5a189a", hover_color="#3c096c",text_color="white", font=("Roboto", 14.5))
 ButtonTab.grid(row=7, column=2, padx=20, pady=10)
 # -- 
 

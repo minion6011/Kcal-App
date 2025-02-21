@@ -152,10 +152,10 @@ def resultModal(mb, error = False):
             import random
             # - AI
             ai_input = f"{mb} kcal"
-            random_food = random.choice(["carni bianche", "legumi", "verdure", "alimenti a basso consumo di zuccheri", "pesce", "crostacei", "carboidrati", "alimenti con colesterolo buono"])
+            random_food = random.choice(["carni bianche", "legumi", "verdure", "alimenti a basso consumo di zuccheri", "pesce", "crostacei", "carboidrati", "alimenti con colesterolo buono", "uova"])
             genai.configure(api_key=key)
             generation_config = {
-            "temperature": 0,
+            "temperature": 0.2,
             "top_p": 0.95,
             "top_k": 40,
             "max_output_tokens": 8192,
@@ -164,7 +164,7 @@ def resultModal(mb, error = False):
             model = genai.GenerativeModel(
             model_name="gemini-2.0-flash-exp",
             generation_config=generation_config,
-            system_instruction=f"Sei un generatore di diete, ti verra fornito un messaggio dicendo \"x kcal\" e al posto di x un numero tu dovrai generare una dieta in base al numero di kcal, tu dovrai soltanto rispondere usando il seguente schema\n\nNome pasto (kcal presenti nel)\n\nNome Alimento, quantità in grammi da consumare; non evidenziare in grassetto nessuna parola e non usare il simbolo *, utilizza vari tipi di prodotti evitando di usare sempre gli stessi, tenta di basare la dieta su {random_food} e quota i pasti seguendo le seguenti istruzioni: colazione {round((mb/100)*25, 2)} kcal, spuntino {round((mb/100)*5, 2)} kcal, pranzo {round((mb/100)*40, 2)} kcal, cena {round((mb/100)*30, 2)} kcal; tenta di utilizzare quantità molto moderate di carboidrati. I pasti devono essere basati sulla dieta mediterranea, di solito tutti i pasti principali devono comprendere in modo equo una proteina e un carboidrato evitando alimenti molto zuccherati",
+            system_instruction=f"Sei un generatore di diete, ti verra fornito un messaggio dicendo \"x kcal\" e al posto di x un numero tu dovrai generare una dieta in base al numero di kcal distribuite per pasti: colazione {round((mb/100)*25, 2)} kcal, spuntino {round((mb/100)*5, 2)} kcal, pranzo {round((mb/100)*40, 2)} kcal, cena {round((mb/100)*30, 2)} kcal, in lingua italiana in cui tu dovrai soltanto rispondere usando il seguente schema\n\nNome pasto (kcal presenti nel pasto)\n\nNome Alimento, quantità in grammi da consumare; non evidenziare in grassetto nessuna parola e non usare il simbolo *, tenta di basare la dieta su {random_food}; tenta di utilizzare quantità molto moderate di carboidrati. I pasti devono essere basati sulla dieta mediterranea, di solito tutti i pasti principali devono comprendere in modo equo una proteina e un carboidrato evitando alimenti molto zuccherati, genera pasti o usa alimenti tipici della cucina italiana controllando la colazioni rispetti una colazione italiana (caffe/latte + biscotti/muesli). Se usi lo 'Yogurt grecoTotal 0% Grassi' scrivilo come 'Yogurt Greco'",
             )
             chat_session = model.start_chat()
             response = chat_session.send_message(ai_input)
